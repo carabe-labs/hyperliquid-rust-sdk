@@ -102,13 +102,13 @@ pub enum Message {
 }
 
 #[derive(Serialize)]
-pub(crate) struct SubscriptionSendData<'a> {
+pub struct SubscriptionSendData<'a> {
     method: &'static str,
     subscription: &'a serde_json::Value,
 }
 
 #[derive(Serialize)]
-pub(crate) struct Ping {
+pub struct Ping {
     method: &'static str,
 }
 
@@ -471,7 +471,7 @@ impl WsManager {
         Self::send_subscription_data("unsubscribe", writer, identifier).await
     }
 
-    pub(crate) async fn add_subscription(
+    pub async fn add_subscription(
         &mut self,
         identifier: String,
         sending_channel: UnboundedSender<Message>,
@@ -516,7 +516,7 @@ impl WsManager {
         Ok(subscription_id)
     }
 
-    pub(crate) async fn remove_subscription(&mut self, subscription_id: u32) -> Result<()> {
+    pub async fn remove_subscription(&mut self, subscription_id: u32) -> Result<()> {
         let identifier = self
             .subscription_identifiers
             .get(&subscription_id)
