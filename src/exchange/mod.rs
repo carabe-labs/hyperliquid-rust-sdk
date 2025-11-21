@@ -1,6 +1,6 @@
 pub mod actions;
 mod builder;
-mod cancel;
+pub mod cancel;
 mod exchange_client;
 mod exchange_responses;
 mod modify;

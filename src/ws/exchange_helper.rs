@@ -1,10 +1,11 @@
-use crate::WsManager;
+use crate::{BulkCancel, WsManager};
+use crate::cancel::CancelRequest;
 use crate::{
     exchange::{order::OrderRequest, BuilderInfo},
     helpers::next_nonce,
     prelude::*,
-    signature::{sign_l1_action,sign_typed_data},
-    BulkOrder,SpotSend, Error,
+    signature::{sign_l1_action, sign_typed_data},
+    BulkOrder, Error, SpotSend,
 };
 use alloy::primitives::{keccak256, Address, Signature, B256, U256};
 use alloy::signers::local::PrivateKeySigner;
@@ -37,6 +38,7 @@ pub(crate) struct OrderRestingDetails {
 pub(crate) enum Actions {
     Order(BulkOrder),
     SpotSend(SpotSend),
+    Cancel(BulkCancel)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -120,24 +122,17 @@ pub async fn bulk_order_with_builder(
         builder = None;
     }
 
-    let mut transformed_orders = Vec::new();
-
-    for order in orders {
-        transformed_orders.push(order);
-    }
-
     // Create the action with proper type field
     let action = Actions::Order(BulkOrder {
-        orders: transformed_orders,
+        orders,
         grouping: "na".to_string(),
         builder: builder,
     });
     let action_value =
         serde_json::to_value(&action).map_err(|e| Error::JsonParse(e.to_string()))?;
-    println!("Action: {:#?}", action_value);
+
     // Hash the Actions (this serializes to MessagePack)
     let connection_id = action.hash(nonce, vault_address)?;
-    println!("Connection ID: {:#?}", connection_id);
 
     let signature = sign_l1_action(wallet, connection_id, true).unwrap();
     let exchange_payload = ExchangePayload {
@@ -152,37 +147,66 @@ pub async fn bulk_order_with_builder(
     return Ok(payload);
 }
 
- pub async fn spot_transfer(
-        amount: &str,
-        destination: &str,
-        token: &str,
-        wallet: PrivateKeySigner,
-        nonce: u64,
-    ) -> Result<serde_json::Value> {
+pub async fn spot_transfer(
+    amount: &str,
+    destination: &str,
+    token: &str,
+    wallet: PrivateKeySigner,
+    nonce: u64,
+) -> Result<serde_json::Value> {
+    let spot_send = SpotSend {
+        signature_chain_id: 421614,
+        hyperliquid_chain: "Mainnet".to_string(),
+        destination: destination.to_string(),
+        amount: amount.to_string(),
+        time: nonce,
+        token: token.to_string(),
+    };
+    let signature = sign_typed_data(&spot_send, &wallet)?;
+    let action = serde_json::to_value(Actions::SpotSend(spot_send))
+        .map_err(|e| Error::JsonParse(e.to_string()))?;
 
-        let spot_send = SpotSend {
-            signature_chain_id: 421614,
-            hyperliquid_chain: "Mainnet".to_string(),
-            destination: destination.to_string(),
-            amount: amount.to_string(),
-            time: nonce,
-            token: token.to_string(),
-        };
-        let signature = sign_typed_data(&spot_send, &wallet)?;
-        let action = serde_json::to_value(Actions::SpotSend(spot_send))
-            .map_err(|e| Error::JsonParse(e.to_string()))?;
-        
-        let exchange_payload = ExchangePayload {
-            action: action,
-            signature: signature.into(),
-            nonce: nonce,
-            vault_address: None,
-        };
-         let payload = serde_json::to_value(&exchange_payload).map_err(|e| Error::JsonParse(e.to_string()))?;
-            return Ok(payload);
-    }
+    let exchange_payload = ExchangePayload {
+        action: action,
+        signature: signature.into(),
+        nonce: nonce,
+        vault_address: None,
+    };
+    let payload =
+        serde_json::to_value(&exchange_payload).map_err(|e| Error::JsonParse(e.to_string()))?;
+    return Ok(payload);
+}
 
+pub async fn bulk_cancel(
+    cancels: Vec<CancelRequest>,
+    wallet: Option<&PrivateKeySigner>,
+    vault_address: Option<Address>,
+    nonce: u64,
+) -> Result<serde_json::Value> {
+    let wallet = wallet
+        .as_ref()
+        .ok_or(Error::JsonParse("Wallet not provided".to_string()))?;
 
+    // Create the action with proper type field
+    let action = Actions::Cancel(BulkCancel { cancels });
+    let action_value =
+        serde_json::to_value(&action).map_err(|e| Error::JsonParse(e.to_string()))?;
+
+    // Hash the Actions (this serializes to MessagePack)
+    let connection_id = action.hash(nonce, vault_address)?;
+
+    let signature = sign_l1_action(wallet, connection_id, true).unwrap();
+    let exchange_payload = ExchangePayload {
+        action: action_value,
+        signature: signature.into(),
+        nonce: nonce,
+        vault_address: vault_address,
+    };
+
+    let payload =
+        serde_json::to_value(&exchange_payload).map_err(|e| Error::JsonParse(e.to_string()))?;
+    return Ok(payload);
+}
 
 #[cfg(test)]
 mod tests {
@@ -247,7 +271,7 @@ mod tests {
         }
     }
 
-     async fn test_spot_transfer() {
+    async fn test_spot_transfer() {
         let nonce = next_nonce();
         let _ = env_logger::builder()
             .is_test(true)
@@ -290,5 +314,4 @@ mod tests {
             }
         }
     }
-
 }

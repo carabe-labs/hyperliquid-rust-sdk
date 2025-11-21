@@ -15,7 +15,7 @@ pub use consts::{EPSILON, LOCAL_API_URL, MAINNET_API_URL, TESTNET_API_URL};
 pub use eip712::Eip712;
 pub use errors::Error;
 pub use exchange::*;
-pub use helpers::{bps_diff, truncate_float, BaseUrl};
+pub use helpers::{bps_diff, truncate_float, BaseUrl, next_nonce};
 pub use info::{info_client::*, *};
 pub use market_maker::{MarketMaker, MarketMakerInput, MarketMakerRestingOrder};
 pub use meta::{AssetContext, AssetMeta, Meta, MetaAndAssetCtxs, SpotAssetMeta, SpotMeta};

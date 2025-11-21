@@ -12,7 +12,7 @@ fn now_timestamp_ms() -> u64 {
     now.timestamp_millis() as u64
 }
 
-pub(crate) fn next_nonce() -> u64 {
+pub fn next_nonce() -> u64 {
     let nonce = CUR_NONCE.fetch_add(1, Ordering::Relaxed);
     let now_ms = now_timestamp_ms();
     if nonce > now_ms + 1000 {
