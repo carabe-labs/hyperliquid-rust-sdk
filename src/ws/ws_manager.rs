@@ -102,13 +102,13 @@ pub enum Message {
 }
 
 #[derive(Serialize)]
-pub struct SubscriptionSendData<'a> {
+pub(crate) struct SubscriptionSendData<'a> {
     method: &'static str,
     subscription: &'a serde_json::Value,
 }
 
 #[derive(Serialize)]
-pub struct Ping {
+pub(crate) struct Ping {
     method: &'static str,
 }
 

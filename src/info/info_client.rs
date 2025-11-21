@@ -99,7 +99,7 @@ pub enum InfoRequest {
 #[derive(Debug)]
 pub struct InfoClient {
     pub http_client: HttpClient,
-    pub(crate) ws_manager: Option<WsManager>,
+    pub ws_manager: Option<WsManager>,
     reconnect: bool,
 }
 
