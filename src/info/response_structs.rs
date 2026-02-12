@@ -151,3 +151,12 @@ pub struct ActiveAssetDataResponse {
     pub available_to_trade: Vec<String>,
     pub mark_px: String,
 }
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UserRateLimitResponse {
+    pub cum_vlm: String,
+    pub n_requests_used: u64,
+    pub n_requests_cap: u64,
+    pub n_requests_surplus: u64,
+}

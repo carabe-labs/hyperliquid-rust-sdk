@@ -16,7 +16,7 @@ use crate::{
     req::HttpClient,
     ws::{Subscription, WsManager},
     BaseUrl, Error, Message, OrderStatusResponse, ReferralResponse, UserFeesResponse,
-    UserFundingResponse, UserTokenBalanceResponse,
+    UserFundingResponse, UserRateLimitResponse, UserTokenBalanceResponse,
 };
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -93,6 +93,10 @@ pub enum InfoRequest {
     ActiveAssetData {
         user: Address,
         coin: String,
+    },
+    #[serde(rename = "userRateLimit")]
+    UserRateLimit {
+        user: Address,
     },
 }
 
@@ -318,6 +322,11 @@ impl InfoClient {
         coin: String,
     ) -> Result<ActiveAssetDataResponse> {
         let input = InfoRequest::ActiveAssetData { user, coin };
+        self.send_info_request(input).await
+    }
+
+    pub async fn user_rate_limit(&self, address: Address) -> Result<UserRateLimitResponse> {
+        let input = InfoRequest::UserRateLimit { user: address };
         self.send_info_request(input).await
     }
 }
