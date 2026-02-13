@@ -83,6 +83,8 @@ pub struct DailyUserVlm {
 pub struct FeeSchedule {
     pub add: String,
     pub cross: String,
+    pub spot_add: String,
+    pub spot_cross: String,
     pub referral_discount: String,
     pub tiers: Tiers,
 }

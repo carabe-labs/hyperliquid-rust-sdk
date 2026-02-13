@@ -30,6 +30,8 @@ pub struct UserFeesResponse {
     pub fee_schedule: FeeSchedule,
     pub user_add_rate: String,
     pub user_cross_rate: String,
+    pub user_spot_add_rate: String,
+    pub user_spot_cross_rate: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
