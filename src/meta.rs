@@ -96,6 +96,12 @@ pub struct AssetMeta {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct PerpDexInfo {
+    pub name: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct SpotAssetMeta {
     pub tokens: [usize; 2],
     pub name: String,
