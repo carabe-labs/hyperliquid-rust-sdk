@@ -11,7 +11,7 @@ use crate::{
         L2SnapshotResponse, OpenOrdersResponse, OrderInfo, RecentTradesResponse, UserFillsResponse,
         UserStateResponse,
     },
-    meta::{AssetContext, Meta, SpotMeta, SpotMetaAndAssetCtxs},
+    meta::{AssetContext, Meta, PerpDexInfo, SpotMeta, SpotMetaAndAssetCtxs},
     prelude::*,
     req::HttpClient,
     ws::{Subscription, WsManager},
@@ -54,8 +54,15 @@ pub enum InfoRequest {
         user: Address,
         oid: u64,
     },
-    Meta,
-    MetaAndAssetCtxs,
+    Meta {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        dex: Option<String>,
+    },
+    MetaAndAssetCtxs {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        dex: Option<String>,
+    },
+    PerpDexs,
     SpotMeta,
     SpotMetaAndAssetCtxs,
     AllMids,
@@ -212,12 +219,34 @@ impl InfoClient {
     }
 
     pub async fn meta(&self) -> Result<Meta> {
-        let input = InfoRequest::Meta;
+        let input = InfoRequest::Meta { dex: None };
+        self.send_info_request(input).await
+    }
+
+    pub async fn meta_for_dex(&self, dex: &str) -> Result<Meta> {
+        let input = InfoRequest::Meta {
+            dex: Some(dex.to_string()),
+        };
         self.send_info_request(input).await
     }
 
     pub async fn meta_and_asset_contexts(&self) -> Result<(Meta, Vec<AssetContext>)> {
-        let input = InfoRequest::MetaAndAssetCtxs;
+        let input = InfoRequest::MetaAndAssetCtxs { dex: None };
+        self.send_info_request(input).await
+    }
+
+    pub async fn meta_and_asset_contexts_for_dex(
+        &self,
+        dex: &str,
+    ) -> Result<(Meta, Vec<AssetContext>)> {
+        let input = InfoRequest::MetaAndAssetCtxs {
+            dex: Some(dex.to_string()),
+        };
+        self.send_info_request(input).await
+    }
+
+    pub async fn perp_dexs(&self) -> Result<Vec<Option<PerpDexInfo>>> {
+        let input = InfoRequest::PerpDexs;
         self.send_info_request(input).await
     }
 

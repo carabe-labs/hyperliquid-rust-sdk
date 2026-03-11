@@ -123,6 +123,21 @@ impl ExchangeClient {
             coin_to_asset.insert(asset.name.clone(), asset_ind as u32);
         }
 
+        // Register builder-deployed perp coins (asset IDs: 100000 + dex_index * 10000 + index)
+        if let Ok(perp_dexs) = info.perp_dexs().await {
+            for (dex_index, dex_info) in perp_dexs.iter().enumerate() {
+                if let Some(dex) = dex_info {
+                    if let Ok(dex_meta) = info.meta_for_dex(&dex.name).await {
+                        for (asset_idx, asset) in dex_meta.universe.iter().enumerate() {
+                            let global_id =
+                                100_000 + dex_index as u32 * 10_000 + asset_idx as u32;
+                            coin_to_asset.insert(asset.name.clone(), global_id);
+                        }
+                    }
+                }
+            }
+        }
+
         coin_to_asset = info
             .spot_meta()
             .await?
